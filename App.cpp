@@ -1,6 +1,7 @@
 #include "App.h"
+#include "User.h"
 
-App::App() : server(nullptr, 5454) {
+App::App() : server(nullptr, 5556) {
 
 }
 
@@ -10,7 +11,9 @@ void App::start() {
     cout << "server listening" << endl;
 
     while (true) {
-
+        User * user = server.acceptUser();
+        if (user == nullptr) continue;
+        userManager.addUser(user);
     }
 
 }

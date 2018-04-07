@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include "User.h"
 
 class Server {
 private:
@@ -16,6 +17,7 @@ public:
 
     void binding();
     void listening(int size);
+    User* acceptUser();
 
 };
 

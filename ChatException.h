@@ -1,7 +1,3 @@
-//
-// Created by joju on 2018. 4. 7..
-//
-
 #ifndef MULTICHATTING_CHATEXCEPTION_H
 #define MULTICHATTING_CHATEXCEPTION_H
 

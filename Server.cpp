@@ -34,3 +34,12 @@ void Server::listening(int size) {
         throw ChatException(1002);
     }
 }
+
+User *Server::acceptUser() {
+    int client_socket;
+    sockaddr_in client_address;
+    int len = sizeof(client_address);
+    client_socket = accept(this->serverSocket, (sockaddr*)&client_address, (socklen_t *) &len);
+    return new User(client_socket, client_address);
+}
+

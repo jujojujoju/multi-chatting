@@ -14,39 +14,9 @@ User::User(int cs, sockaddr_in ca) {
     setStatus("offline");
 }
 
-const string &User::getName() const {
-    return name;
-}
-
-void User::setName(const string &name) {
-    User::name = name;
-}
-
-const string &User::getID() const {
-    return ID;
-}
-
-void User::setID(const string &ID) {
-    User::ID = ID;
-}
-
-const string &User::getPwd() const {
-    return pwd;
-}
-
-void User::setPwd(const string &pwd) {
-    User::pwd = pwd;
-}
-
-const string &User::getStatus() const {
-    return status;
-}
-
-void User::setStatus(const string &status) {
-    User::status = status;
-}
 
 void User::run() {
+    cout << "connection!" << endl;
     if (userList == NULL) return;
     uint64_t size;
     uint64_t read_byte;
@@ -104,6 +74,8 @@ void User::processMessage(string msg) {
 
 }
 void User::login(Json::Value value){
+//    MYSQL mysql
+
     Json::Value user = value["user"];
 
     setID(user["id"].asString());
@@ -118,7 +90,6 @@ void User::login(Json::Value value){
     if (getID() == "jj" && getPwd() == "dkagh") {
         setStatus("online");
         resp["user"] = getUser();
-
         resp["data"] = "ok";
         sendMessage(resp);
         cout << "login user : " << userList->size() << endl;
@@ -182,4 +153,37 @@ void User::sendMessage(Json::Value value) {
     if (send(client_socket, msg.c_str(), size, 0) <= 0) {
         throw exception();
     }
+}
+
+
+const string &User::getName() const {
+    return name;
+}
+
+void User::setName(const string &name) {
+    User::name = name;
+}
+
+const string &User::getID() const {
+    return ID;
+}
+
+void User::setID(const string &ID) {
+    User::ID = ID;
+}
+
+const string &User::getPwd() const {
+    return pwd;
+}
+
+void User::setPwd(const string &pwd) {
+    User::pwd = pwd;
+}
+
+const string &User::getStatus() const {
+    return status;
+}
+
+void User::setStatus(const string &status) {
+    User::status = status;
 }

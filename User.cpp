@@ -2,14 +2,7 @@
 #include <util.h>
 #include "User.h"
 #include "UserManager.h"
-#include "mysql_connection.h"
-
-#include <cppconn/driver.h>
-#include <cppconn/exception.h>
-#include <cppconn/resultset.h>
-#include <cppconn/statement.h>
-#include <cppconn/prepared_statement.h>
-
+#include "Database.h"
 User::~User() {
     close(client_socket);
 }
@@ -32,7 +25,7 @@ void User::run() {
     try {
         while (1) {
             cout << "message processing..." << endl;
-
+//          만약 길이정보가 8바이트 이하의 길이면 리턴
             if (recv(client_socket, (char*)&size, sizeof(size), 0) <= 0) {
                 throw exception();
             }
@@ -40,6 +33,7 @@ void User::run() {
             int rbyte = 0;
             read_byte = 0;
             stringstream ss;
+//
             while (read_byte < size) {
                 if ((rbyte = (int) recv(client_socket, (char*)&buf, sizeof(buf) - 1, 0)) <= 0) {
                     throw exception();
@@ -83,75 +77,28 @@ void User::processMessage(string msg) {
 
 }
 void User::login(Json::Value value){
-//    MYSQL mysql
-
     Json::Value user = value["user"];
 
     setID(user["id"].asString());
     setPwd(user["pwd"].asString());
-    setName("jjj");
 
     Json::Value resp;
     resp["type"] = TYPE::RESPONSE;
     resp["time"] = (uint32_t)getTime();
-    bool ok = false;
 
-    try {
-        sql::Driver *driver;
-        sql::Connection *con;
-        sql::Statement *stmt;
-        sql::ResultSet *res;
-        sql::PreparedStatement *pstmt;
-
-        /* Create a connection */
-        driver = get_driver_instance();
-        con = driver->connect("localhost", "root", " ");
-        /* Connect to the MySQL test database */
-        con->setSchema("multichatting");
-
-        /* Select in ascending order */
-        stmt = con->createStatement();
-        res = stmt->executeQuery("SELECT * FROM USERS");
-
-        while (res->next()) {
-            cout << "\t... MySQL replies: ";
-            cout << res->getString(1) << endl;
-            cout << res->getString("name") << endl;
-            cout << res->getString("id") << endl;
-            cout << res->getString("password") << endl;
-            // 성공
-            if (getID() == res->getString("id") && getPwd() == res->getString("password")) {
-                ok = true;
-                break;
-            }
-
-        }
-        delete stmt;
-        delete con;
-
-    } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
-    }
-    cout << endl;
-
-
-    if(ok){
+    string username = database.isLogin(getID(), getPwd());
+    if(username != ""){
         setStatus("online");
         resp["user"] = getUser();
         resp["data"] = "ok";
+        setName(username);
         sendMessage(resp);
         cout << "login user : " << userList->size() << endl;
-    } else {
+    }else{
         // 실패
         resp["data"] = "fail";
         sendMessage(resp);
     }
-
-    // db 연동
 }
 
 void User::signin(Json::Value value) {

@@ -10,7 +10,7 @@
 #include "ChatException.h"
 #include "CThread.h"
 #include "json/json.h"
-
+#include "Database.h"
 using namespace std;
 
 enum TYPE {
@@ -22,6 +22,7 @@ enum TYPE {
 
 class User : public CThread{
 private:
+    Database database;
     int client_socket;
     sockaddr_in client_address;
     string name;

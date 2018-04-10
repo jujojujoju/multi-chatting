@@ -64,6 +64,6 @@ if(MYSQLCONNECTORCPP_FOUND)
 endif()
 #########################################################################################
 
-set(SOURCE_FILES main.cpp App.cpp App.h Server.cpp Server.h ChatException.h User.cpp User.h CThread.cpp CThread.h UserManager.cpp UserManager.h)
+set(SOURCE_FILES main.cpp App.cpp App.h Server.cpp Server.h ChatException.h User.cpp User.h CThread.cpp CThread.h UserManager.cpp UserManager.h Database.cpp Database.h)
 add_executable(multichatting ${SOURCE_FILES})
 target_link_libraries(multichatting  ${MYSQLCONNECTORCPP_LIBRARY})

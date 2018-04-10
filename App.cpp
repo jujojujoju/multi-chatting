@@ -8,12 +8,11 @@
 #include <cppconn/statement.h>
 #include <cppconn/prepared_statement.h>
 
-App::App() : server(nullptr, 5557) {
+App::App() : server(nullptr, 5559) {
 
 }
 
 void App::start() {
-    cout << "Let's have MySQL count from 10 to 1..." << endl;
     try {
         sql::Driver *driver;
         sql::Connection *con;
@@ -48,7 +47,6 @@ void App::start() {
         cout << " (MySQL error code: " << e.getErrorCode();
         cout << ", SQLState: " << e.getSQLState() << " )" << endl;
     }
-
     cout << endl;
 
     server.binding();

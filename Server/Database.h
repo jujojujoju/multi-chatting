@@ -19,8 +19,11 @@ private:
 public:
     sql::Driver * getDriver();
     sql::Connection * getConnection();
-    std::string isLogin(const std::string &string, const std::string &basic_string);
+    std::string login(const std::string &string, const std::string &basic_string);
 
+    bool idCheck(std::string userid);
+
+    bool createUser(Json::Value user);
 };
 
 #endif //MULTICHATTING_DATABASE_H

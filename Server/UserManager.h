@@ -1,9 +1,8 @@
 #ifndef MULTICHATTING_USERMANAGER_H
 #define MULTICHATTING_USERMANAGER_H
 
-
 #include "User.h"
-
+#include <vector>
 class UserManager {
 
 private:

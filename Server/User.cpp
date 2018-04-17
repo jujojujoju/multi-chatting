@@ -1,8 +1,6 @@
-#include <string>
-#include <util.h>
 #include "User.h"
 #include "UserManager.h"
-#include "Database.h"
+
 User::~User() {
     close(client_socket);
 }
@@ -26,16 +24,17 @@ void User::run() {
         while (1) {
             cout << "message processing..." << endl;
 //          만약 길이정보가 8바이트 이하의 길이면 리턴
-            if (recv(client_socket, (char*)&size, sizeof(size), 0) <= 0) {
+            if (recv(client_socket, (char *) &size, sizeof(size), 0) <= 0) {
                 throw exception();
             }
+            size = htonll(size);
+            cout << "recieve size : " << size << endl;
 
             int rbyte = 0;
             read_byte = 0;
             stringstream ss;
-//
             while (read_byte < size) {
-                if ((rbyte = (int) recv(client_socket, (char*)&buf, sizeof(buf) - 1, 0)) <= 0) {
+                if ((rbyte = (int) recv(client_socket, (char *) &buf, sizeof(buf) - 1, 0)) <= 0) {
                     throw exception();
                 }
                 read_byte += rbyte;
@@ -48,9 +47,6 @@ void User::run() {
     leaveUser();
 }
 
-void User::setUserList(vector<User *> *ulist) {
-    userList = ulist;
-}
 
 void User::processMessage(string msg) {
     Json::Value root;
@@ -73,10 +69,11 @@ void User::processMessage(string msg) {
             default:
                 break;
         }
-    } catch(...) {}
+    } catch (...) {}
 
 }
-void User::login(Json::Value value){
+
+void User::login(Json::Value value) {
     Json::Value user = value["user"];
 
     setID(user["id"].asString());
@@ -84,24 +81,52 @@ void User::login(Json::Value value){
 
     Json::Value resp;
     resp["type"] = TYPE::RESPONSE;
-    resp["time"] = (uint32_t)getTime();
+    resp["time"] = (uint32_t) getTime();
 
-    string username = database.isLogin(getID(), getPwd());
-    if(username != ""){
+    string username = database.login(getID(), getPwd());
+    cout << username << endl;
+    if (username != "") {
         setStatus("online");
+        setName(username);
         resp["user"] = getUser();
         resp["data"] = "ok";
-        setName(username);
         sendMessage(resp);
         cout << "login user : " << userList->size() << endl;
-    }else{
+    } else {
         // 실패
+        resp["name"] = "";
         resp["data"] = "fail";
         sendMessage(resp);
     }
 }
 
 void User::signin(Json::Value value) {
+    Json::Value user = value["user"];
+
+    Json::Value resp;
+    resp["type"] = TYPE::RESPONSE;
+    resp["time"] = (uint32_t) getTime();
+
+//    id check
+    if (!database.idCheck(user["id"].asString())) {
+        setID(user["id"].asString());
+        setPwd(user["pwd"].asString());
+//        sign in 때에는 사용자이름을 직접 입력받는다
+        setName(user["name"].asString());
+        setStatus("online");
+
+        if (database.createUser(user));
+        {
+            resp["user"] = getUser();
+            resp["data"] = "ok";
+            sendMessage(resp);
+            cout << " user sign in : " << userList->size() << endl;
+        }
+    } else {
+        // 실패
+        resp["data"] = "fail";
+        sendMessage(resp);
+    }
 
 }
 
@@ -111,7 +136,7 @@ void User::chat(Json::Value value) {
 
 void User::leaveUser() {
     UserManager::mutexLock();
-    for (auto iter=userList->begin(); iter != userList->end();) {
+    for (auto iter = userList->begin(); iter != userList->end();) {
         if ((*iter)->getID() == getID()) {
             delete *iter;
             iter = userList->erase(iter);
@@ -125,6 +150,28 @@ void User::leaveUser() {
     UserManager::mutexUnLock();
 }
 
+void User::sendMessage(Json::Value value) {
+    Json::StyledWriter writer;
+    string msg = writer.write(value);
+
+    uint64_t size = msg.size() + 1;
+    uint64_t s = htonll(size);
+
+    cout << "send : " << size << endl;
+
+    if (send(client_socket, &s, sizeof(s), 0) <= 0) {
+        throw exception();
+    }
+
+    if (send(client_socket, msg.c_str(), size, 0) <= 0) {
+        throw exception();
+    }
+}
+
+void User::setUserList(vector < User * > *ulist) {
+    userList = ulist;
+}
+
 time_t User::getTime() const {
     return time(NULL);
 }
@@ -136,22 +183,6 @@ Json::Value User::getUser() const {
     user["status"] = getStatus();
     return user;
 }
-
-void User::sendMessage(Json::Value value) {
-    Json::StyledWriter writer;
-    string msg = writer.write(value);
-
-    uint64_t size = msg.size()+1;
-
-    if (send(client_socket, &size, sizeof(size), 0) <= 0) {
-        throw exception();
-    }
-
-    if (send(client_socket, msg.c_str(), size, 0) <= 0) {
-        throw exception();
-    }
-}
-
 
 const string &User::getName() const {
     return name;

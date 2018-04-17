@@ -7,10 +7,13 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include "ChatException.h"
-#include "CThread.h"
+#include <util.h>
+#include <string>
+
 #include "json/json.h"
+#include "CThread.h"
 #include "Database.h"
+
 using namespace std;
 
 enum TYPE {

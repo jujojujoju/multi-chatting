@@ -188,6 +188,7 @@ typings/
 .env
 
 .idea
-dfd.txt
+*.puml
+*.png
 
 # End of https://www.gitignore.io/api/c++,node,macos,jetbrains

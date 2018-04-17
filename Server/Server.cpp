@@ -1,6 +1,4 @@
-
 #include "Server.h"
-#include "ChatException.h"
 
 Server::Server(const char *ip, int port) {
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);

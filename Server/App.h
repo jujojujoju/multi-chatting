@@ -6,6 +6,7 @@
 #include <sstream>
 #include "Server.h"
 #include "UserManager.h"
+#include "User.h"
 
 using namespace std;
 

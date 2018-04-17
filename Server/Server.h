@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include "User.h"
+#include "ChatException.h"
 
 class Server {
 private:
@@ -20,6 +21,8 @@ public:
     User* acceptUser();
 
 };
+
+
 
 
 #endif //MULTICHATTING_SERVER_H

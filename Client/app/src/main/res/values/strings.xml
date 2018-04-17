@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Client</string>
+    <string name="asdfasefasefasdf">asdfasefasefasdf</string>
+    <string name="password_again">PassWord again</string>
+    <string name="password">PassWord</string>
+    <string name="id">ID</string>
+    <string name="signin">signIn</string>
+    <string name="signup">signUp</string>
+    <string name="name">Name</string>
+</resources>

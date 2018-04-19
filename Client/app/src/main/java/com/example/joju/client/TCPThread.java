@@ -2,7 +2,7 @@ package com.example.joju.client;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
+import android.os.*;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;

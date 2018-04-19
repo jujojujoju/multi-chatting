@@ -7,4 +7,6 @@
     <string name="signin">signIn</string>
     <string name="signup">signUp</string>
     <string name="name">Name</string>
+    <string name="send">Send</string>
+    <string name="sample">Sample</string>
 </resources>

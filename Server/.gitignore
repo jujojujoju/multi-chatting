@@ -190,5 +190,8 @@ typings/
 .idea
 *.puml
 *.png
+Makefile
+multichatting
+CMakeCache.txt
 
 # End of https://www.gitignore.io/api/c++,node,macos,jetbrains

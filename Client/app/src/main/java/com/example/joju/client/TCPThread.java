@@ -3,6 +3,11 @@ package com.example.joju.client;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -14,7 +19,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class TCPThread extends Thread implements Serializable {
+public class TCPThread extends Thread implements Parcelable {
 
     private static final String serverIP = "172.20.10.2";
     private static final int serverPort = 5556;
@@ -22,12 +27,44 @@ public class TCPThread extends Thread implements Serializable {
     private String password = "";
     private String response = "";
     private String userName = "";
-    private Activity activity;
+    private transient Activity activity;
     private Socket socket_init = null;
 
     public TCPThread(Activity act) {
         setActivity(act);
     }
+
+    protected TCPThread(Parcel in) {
+        ID = in.readString();
+        password = in.readString();
+        response = in.readString();
+        userName = in.readString();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(ID);
+        dest.writeString(password);
+        dest.writeString(response);
+        dest.writeString(userName);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<TCPThread> CREATOR = new Creator<TCPThread>() {
+        @Override
+        public TCPThread createFromParcel(Parcel in) {
+            return new TCPThread(in);
+        }
+
+        @Override
+        public TCPThread[] newArray(int size) {
+            return new TCPThread[size];
+        }
+    };
 
     public void setActivity(Activity act) {
         this.activity = act;
@@ -71,30 +108,39 @@ public class TCPThread extends Thread implements Serializable {
     }
 
     public void run() {
+//        if thread is not interrupted connect to server
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 connect();
+                System.out.println("connection success");
             } catch (Exception e) {
+                e.printStackTrace();
                 continue;
             }
 
-            if (this.activity.getClass().getName().equals(MainActivity.class.getClass().getName())){
+            if (this.activity.getClass().getName().equals(MainActivity.class.getName())) {
                 if (!login()) continue;
-                goChatActivity();
-                runChat();
-            }
-            else if (this.activity.getClass().getName().equals(SigninActivity.class.getClass().getName())) {
-                signIn();
 
+                goChatActivity();
+
+                runChat();
+            } else if (this.activity.getClass().getName().equals(SigninActivity.class.getName())) {
+                signIn();
             }
 
         }
 
     }
 
+    private void signIn() {
+
+    }
+
     private void connect() throws Exception {
         InetAddress serverAddr = InetAddress.getByName(serverIP);
         System.out.println("C: Connecting...");
+        System.out.println("IP : " + serverIP);
+        System.out.println("Port : " + serverPort);
         socket_init = new Socket(serverAddr, serverPort);
     }
 
@@ -105,21 +151,19 @@ public class TCPThread extends Thread implements Serializable {
                 Toast.makeText(TCPThread.this.activity, "login fail", Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 
     private void goChatActivity() {
-
-        (this.activity).runOnUiThread(new Runnable() {
+        this.activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
+
                 Intent intent2Chatting = new Intent(TCPThread.this.activity, ChattingActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
-                intent2Chatting.putExtra("tcpThread", TCPThread.this);
-                intent2Chatting.putExtra("id", ID);
-                intent2Chatting.putExtra("password", password);
-                intent2Chatting.putExtra("name", getUserName());
+                intent2Chatting.putExtra("tcpThread", (Parcelable) TCPThread.this);
                 TCPThread.this.activity.startActivity(intent2Chatting);
-                Toast.makeText(TCPThread.this.activity, "login success" + getUserName(), Toast.LENGTH_SHORT).show();
+                System.out.println("start Catting Activity");
+
+                Toast.makeText(TCPThread.this.activity, "Hello " + getUserName(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -156,11 +200,6 @@ public class TCPThread extends Thread implements Serializable {
                 return true;
             }
         }
-    }
-
-
-    private void signIn() {
-//        goLoginActivity();
     }
 
     private void runChat() {

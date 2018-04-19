@@ -12,10 +12,10 @@ void UserManager::addUser(User *pUser) {
 //    각 유저에게 전체유저리스트 전달
     pUser->setUserList(&userList);
 //    유저 스레드 시작
+    cout << "user thread start" << endl;
     pUser->start();
 //    유저리스트 충돌방지 mutex lock
     mutexLock();
     userList.push_back(pUser);
     mutexUnLock();
 }
-

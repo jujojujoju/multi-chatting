@@ -38,6 +38,7 @@ User *Server::acceptUser() {
     sockaddr_in client_address;
     int len = sizeof(client_address);
     client_socket = accept(this->serverSocket, (sockaddr*)&client_address, (socklen_t *) &len);
+    cout << "socket accepted " << endl;
     return new User(client_socket, client_address);
 }
 

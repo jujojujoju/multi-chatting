@@ -17,8 +17,10 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View v) {
 
             if (tcpThread == null) {
+                System.out.println("thread is null");
                 tcpThread = new TCPThread(MainActivity.this);
             } else {
+                System.out.println("thread is not null");
                 tcpThread.interrupt();
             }
 

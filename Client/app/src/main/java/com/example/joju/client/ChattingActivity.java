@@ -17,8 +17,8 @@ public class ChattingActivity extends AppCompatActivity {
         Toast.makeText(ChattingActivity.this, "enjoy chatting !!", Toast.LENGTH_SHORT).show();
 
         Intent intent = getIntent();
-        TCPThread tcpThread = (TCPThread) intent.getSerializableExtra("tcpThread");
-        tcpThread.sendMessage("hello");
+        TCPThread tcpThread = intent.getParcelableExtra("tcpThread");
+        System.out.println(tcpThread.getUserName());
 
     }
 }

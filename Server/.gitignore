@@ -193,5 +193,6 @@ typings/
 Makefile
 multichatting
 CMakeCache.txt
+CMakeFiles
 
 # End of https://www.gitignore.io/api/c++,node,macos,jetbrains

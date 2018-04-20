@@ -190,9 +190,25 @@ typings/
 .idea
 *.puml
 *.png
-Makefile
 multichatting
+
+
+# Created by https://www.gitignore.io/api/cmake
+
+### CMake ###
 CMakeCache.txt
 CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+build
+
+
+# End of https://www.gitignore.io/api/cmake
+
 
 # End of https://www.gitignore.io/api/c++,node,macos,jetbrains

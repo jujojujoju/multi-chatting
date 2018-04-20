@@ -60,6 +60,8 @@ find_package_handle_standard_args(MysqlConnectorCpp
 if(MYSQLCONNECTORCPP_FOUND)
     set(MYSQLCONNECTORCPP_INCLUDE_DIRS "${MYSQLCONNECTORCPP_INCLUDE_DIR}") # Add any dependencies here
     set(MYSQLCONNECTORCPP_LIBRARIES "${MYSQLCONNECTORCPP_LIBRARY}") # Add any dependencies here
+    MESSAGE(${MYSQLCONNECTORCPP_INCLUDE_DIR})
+    MESSAGE(${MYSQLCONNECTORCPP_LIBRARY})
     mark_as_advanced(MYSQLCONNECTORCPP_ROOT_DIR)
 endif()
 #########################################################################################

@@ -6,27 +6,27 @@ Users are managed through Sign up, and users can send and receive text and files
 ## Function
 
 * Server
--    TCP socket
--    Multithread
--    Message delivery
+    - TCP socket
+    - Multithread
+    - Message delivery
 
 * Client
-- Create user profile (login and password creation and authentication).
-- Register to server and connect.
-- Retrieve chat history.
-- Check peer status (online, offline, busy).
-- Send and receive message.
+    - Create user profile (login and password creation and authentication).
+    - Register to server and connect.
+    - Retrieve chat history.
+    - Check peer status (online, offline, busy).
+    - Send and receive message.
 ## Requirement
 
 > You need to have some libraries installed before development settings
 
 * Server
-- mysql_connector_c++
-- jsoncpp
+    - mysql_connector_c++
+    - jsoncpp
 
 * Client
-- Gradle
-- Android device over IceCreamSandwich(Android 4.0)
+    - Gradle
+    - Android device over IceCreamSandwich(Android 4.0)
 
 ## Development setting
 #### Server

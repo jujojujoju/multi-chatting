@@ -24,6 +24,12 @@ public:
     bool idCheck(std::string userid);
 
     bool createUser(Json::Value user);
+
+    bool storeMessage(Json::Value value);
+
+    void printDBError(const sql::SQLException &e) const;
+
+    bool logout(const std::string &basic_string);
 };
 
 #endif //MULTICHATTING_DATABASE_H

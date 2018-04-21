@@ -9,7 +9,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 public class SigninActivity extends AppCompatActivity {
-    TCPThread tcpThread = new TCPThread(this);
+    TCPThread tcpThread = null;
     View.OnClickListener listener = new View.OnClickListener() {
 
         @Override
@@ -27,40 +27,37 @@ public class SigninActivity extends AppCompatActivity {
             EditText passwordCheckText = (EditText) findViewById(R.id.PasswordInput2);
             String passwordcheck = passwordCheckText.getText().toString();
 
-            if (userpassword.equals(passwordcheck))
-            {
-                tcpThread.setPassword(userpassword);
+            if (userpassword.equals(passwordcheck)) {
+
+                tcpThread = new TCPThread(SigninActivity.this);
                 tcpThread.setID(userid);
+                tcpThread.setPassword(userpassword);
                 tcpThread.setUserName(username);
-
-                Intent intent2Chatting = new Intent(SigninActivity.this, ChattingActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
-
-                System.out.println("signed id" + userid);
-                System.out.println(userpassword);
 
                 tcpThread.start();
                 try {
                     tcpThread.join();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
                 }
+                tcpThread.Destroy();
 
-                if (tcpThread.responseOK()) {
-                    intent2Chatting.putExtra("id", userid);
-                    intent2Chatting.putExtra("password", userpassword);
-                    intent2Chatting.putExtra("name", username);
-                    startActivity(intent2Chatting);
-                    Toast.makeText(SigninActivity.this, "signup and login success", Toast.LENGTH_SHORT).show();
-                }else
-                {
+                if (tcpThread.isSignup()) {
+                    goMainactivity();
+                    Toast.makeText(SigninActivity.this, "signup success", Toast.LENGTH_SHORT).show();
+                } else {
                     Toast.makeText(SigninActivity.this, "id already exist", Toast.LENGTH_SHORT).show();
                 }
 
-            }
-            else
+            } else
                 Toast.makeText(SigninActivity.this, "password not same", Toast.LENGTH_SHORT).show();
 
         }
     };
+
+    private void goMainactivity() {
+        Intent intent2Chatting = new Intent(SigninActivity.this, MainActivity.class);
+        startActivity(intent2Chatting);
+    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,4 +67,13 @@ public class SigninActivity extends AppCompatActivity {
         signupButton.setOnClickListener(listener);
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (tcpThread != null) {
+            tcpThread.interrupt();
+            tcpThread.Destroy();
+        }
+    }
 }
+

@@ -20,13 +20,15 @@ Users are managed through Sign up, and users can send and receive text and files
 
 > You need to have some libraries installed before development settings
 
+__You should install Android SDK Version 15+__
+
 * Server
     - mysql_connector_c++
     - jsoncpp
 
 * Client
     - Gradle
-    - Android device over IceCreamSandwich(Android 4.0)
+    - Android device IceCreamSandwich(Android 4.0)+
 
 ## Development setting
 #### Server
@@ -62,6 +64,9 @@ Uses project's gradle wrapper to execute clean and build task
 $ ./gradlew clean build
 $ ./gradlew :app:dependencies
 ```
+
+## Run Application
+* You can click __Run__ Button in Android Studio
 
 #### Running on a Device
 > Before you can run your application on a device, you must perform some basic setup for your device:

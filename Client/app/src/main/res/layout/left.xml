@@ -4,12 +4,22 @@
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/msgr"
+        android:id="@+id/profile"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="left"
         android:layout_marginBottom="5dp"
-        android:layout_marginRight="20dp"
+        android:layout_marginLeft="10dp"
+        android:text="Sampleleft"
+        android:textColor="#000" />
+
+    <TextView
+        android:id="@+id/msgr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/profile"
+        android:layout_marginBottom="5dp"
+        android:layout_marginRight="5dp"
         android:background="@drawable/textview_left"
         android:paddingBottom="8dp"
         android:paddingLeft="10dp"
@@ -17,4 +27,18 @@
         android:paddingTop="5dp"
         android:text="Sampleleft"
         android:textColor="#000" />
+
+    <TextView
+        android:id="@+id/time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:paddingLeft="3dp"
+        android:paddingTop="5dp"
+        android:text="Sampleleft"
+        android:textColor="#000"
+        android:layout_alignTop="@+id/msgr"
+        android:layout_toRightOf="@+id/msgr"
+        android:layout_toEndOf="@+id/msgr" />
+
 </RelativeLayout>

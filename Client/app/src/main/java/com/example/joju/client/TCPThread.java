@@ -2,12 +2,6 @@ package com.example.joju.client;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.*;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -17,54 +11,23 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
-public class TCPThread extends Thread implements Parcelable {
+public class TCPThread extends Thread {
 
     private static final String serverIP = "172.20.10.2";
-    private static final int serverPort = 5556;
+    private static final int serverPort = 5555;
     private String ID = "";
     private String password = "";
     private String response = "";
     private String userName = "";
-    private transient Activity activity;
+    private Boolean is_login = false;
+    private Boolean is_signup = false;
+    private Activity activity;
     private Socket socket_init = null;
 
     public TCPThread(Activity act) {
         setActivity(act);
     }
-
-    protected TCPThread(Parcel in) {
-        ID = in.readString();
-        password = in.readString();
-        response = in.readString();
-        userName = in.readString();
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(ID);
-        dest.writeString(password);
-        dest.writeString(response);
-        dest.writeString(userName);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<TCPThread> CREATOR = new Creator<TCPThread>() {
-        @Override
-        public TCPThread createFromParcel(Parcel in) {
-            return new TCPThread(in);
-        }
-
-        @Override
-        public TCPThread[] newArray(int size) {
-            return new TCPThread[size];
-        }
-    };
 
     public void setActivity(Activity act) {
         this.activity = act;
@@ -82,8 +45,24 @@ public class TCPThread extends Thread implements Parcelable {
         return response.equals("ok");
     }
 
+    public boolean isLogin() {
+        return is_login;
+    }
+
+    public boolean isSignup() {
+        return is_signup;
+    }
+
     public void setResponse(String res) {
         response = res;
+    }
+
+    public String getUserId() {
+        return this.ID;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public void setPassword(String password) {
@@ -99,7 +78,6 @@ public class TCPThread extends Thread implements Parcelable {
         try {
             user.put("id", ID);
             user.put("pwd", password);
-//            user.put("name", userName);
             return user;
         } catch (Exception e) {
             e.printStackTrace();
@@ -114,26 +92,25 @@ public class TCPThread extends Thread implements Parcelable {
                 connect();
                 System.out.println("connection success");
             } catch (Exception e) {
-                e.printStackTrace();
                 continue;
             }
-
-            if (this.activity.getClass().getName().equals(MainActivity.class.getName())) {
-                if (!login()) continue;
-
-                goChatActivity();
-
-                runChat();
-            } else if (this.activity.getClass().getName().equals(SigninActivity.class.getName())) {
-                signIn();
+            try {
+                if (this.activity.getClass().getName().equals(MainActivity.class.getName())) {
+                    login_signup(true);
+                    break;
+                } else if (this.activity.getClass().getName().equals(ChattingActivity.class.getName())) {
+                    if (!login_signup(true)) {
+                        break;
+                    }
+                    runChat();
+                } else if (this.activity.getClass().getName().equals(SigninActivity.class.getName())) {
+                    login_signup(false);
+                    break;
+                }
+            } catch (Exception e) {
+                goMainActivity();
             }
-
         }
-
-    }
-
-    private void signIn() {
-
     }
 
     private void connect() throws Exception {
@@ -144,36 +121,17 @@ public class TCPThread extends Thread implements Parcelable {
         socket_init = new Socket(serverAddr, serverPort);
     }
 
-    private void loginFail() {
-        (this.activity).runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(TCPThread.this.activity, "login fail", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+    private boolean login_signup(boolean loginFlag) {
 
-    private void goChatActivity() {
-        this.activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-
-                Intent intent2Chatting = new Intent(TCPThread.this.activity, ChattingActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
-                intent2Chatting.putExtra("tcpThread", (Parcelable) TCPThread.this);
-                TCPThread.this.activity.startActivity(intent2Chatting);
-                System.out.println("start Catting Activity");
-
-                Toast.makeText(TCPThread.this.activity, "Hello " + getUserName(), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-    }
-
-    private boolean login() {
         JSONObject json = new JSONObject();
         try {
-            json.put("type", 300);
             json.put("user", getUserJson());
+            if (loginFlag) {
+                json.put("type", 300);
+            } else {
+                json.put("type", 400);
+                json.getJSONObject("user").put("name", getUserName());
+            }
         } catch (Exception e) {
             return false;
         }
@@ -194,19 +152,17 @@ public class TCPThread extends Thread implements Parcelable {
         } finally {
             if (!responseOK()) {
                 Destroy();
-                loginFail();
                 return false;
             } else {
+                if (loginFlag) {
+                    is_login = true;
+                } else {
+                    is_signup = true;
+                }
                 return true;
             }
         }
-    }
 
-    private void runChat() {
-        while (!Thread.currentThread().isInterrupted()) {
-            JSONObject msg = readMessage();
-
-        }
     }
 
     public JSONObject readMessage() {
@@ -234,8 +190,6 @@ public class TCPThread extends Thread implements Parcelable {
     }
 
     public void sendMessage(String msg) {
-        if (socket_init == null) return;
-
         JSONObject json = new JSONObject();
         try {
             json.put("type", 200);
@@ -245,17 +199,37 @@ public class TCPThread extends Thread implements Parcelable {
             return;
         }
         String data = json.toString();
-        System.out.println(data);
-
         try {
             BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
             bos.write(longToBytes(data.length()));
             bos.write(data.getBytes());
             bos.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
         } finally {
         }
+    }
+
+
+    private void runChat() {
+        while (!Thread.currentThread().isInterrupted()) {
+            JSONObject msg = TCPThread.this.readMessage();
+            activity.runOnUiThread(new ChatRunnable(msg));
+        }
+    }
+
+    private class ChatRunnable implements Runnable {
+        private JSONObject msg;
+
+        public ChatRunnable(JSONObject msg) {
+            this.msg = msg;
+        }
+
+        @Override
+        public void run() {
+            ChattingActivity chattingActivity = (ChattingActivity) TCPThread.this.activity;
+            chattingActivity.printChat(msg);
+        }
+
     }
 
     private byte[] longToBytes(long x) {
@@ -279,6 +253,19 @@ public class TCPThread extends Thread implements Parcelable {
             }
         } catch (IOException e) {
         }
+    }
+
+    private void goMainActivity() {
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent2Chatting = new Intent(TCPThread.this.activity, MainActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
+                TCPThread.this.activity.startActivity(intent2Chatting);
+                System.out.println("start Catting Activity");
+                Toast.makeText(TCPThread.this.activity, "connection close...", Toast.LENGTH_SHORT).show();
+            }
+        });
+
     }
 
 }

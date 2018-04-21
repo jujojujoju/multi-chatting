@@ -9,6 +9,7 @@ void UserManager::addUser(User *pUser) {
         delete pUser;
         return;
     }
+
 //    각 유저에게 전체유저리스트 전달
     pUser->setUserList(&userList);
 //    유저 스레드 시작

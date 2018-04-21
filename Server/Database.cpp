@@ -1,5 +1,6 @@
 #include <json/value.h>
 #include "Database.h"
+#include <stdlib.h>
 
 using namespace std;
 
@@ -9,6 +10,7 @@ sql::Driver *Database::getDriver() {
 
 sql::Connection *Database::getConnection() {
     driver = getDriver();
+//    cout << getenv("MYSQL_HOST");
     con = driver->connect("localhost", "root", " ");
     /* Connect to the MySQL test database */
     con->setSchema("multichatting");
@@ -39,11 +41,7 @@ string Database::login(const std::string &userid, const std::string &userPasswor
         delete con;
 
     } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        printDBError(e);
     }
     cout << endl;
 
@@ -68,11 +66,8 @@ bool Database::idCheck(string userid) {
         delete con;
 
     } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        printDBError(e);
+
     }
     cout << endl;
 
@@ -92,7 +87,7 @@ bool Database::createUser(Json::Value user) {
         stmt = getConnection()->createStatement();
 //        insert new user
         stmt->execute("INSERT INTO users(id, name, password, last_login) VALUES ('" + userid + "', '" + username +
-                "', '" + userpassword + "', NOW());");
+                      "', '" + userpassword + "', NOW());");
 
         cout << "query seccess" << endl;
         ok = true;
@@ -101,13 +96,59 @@ bool Database::createUser(Json::Value user) {
         delete con;
 
     } catch (sql::SQLException &e) {
-        cout << "# ERR: SQLException in " << __FILE__;
-        cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-        cout << "# ERR: " << e.what();
-        cout << " (MySQL error code: " << e.getErrorCode();
-        cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+        printDBError(e);
     }
     cout << endl;
 
     return ok;
+}
+
+bool Database::storeMessage(Json::Value value) {
+    string username = value["user"]["name"].asString();
+    string contents = value["data"].asString();
+
+    try {
+        stmt = getConnection()->createStatement();
+        stmt->execute("Insert Into messages(sender, contents, sended) VALUES ('" + username + "', '" + contents +
+                      "', NOW());");
+        cout << "query seccess" << endl;
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+        return false;
+    }
+    cout << endl;
+
+    return true;
+}
+
+void Database::printDBError(const sql::SQLException &e) const {
+    cout << "# ERR: SQLException in " << __FILE__;
+    cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+    cout << "# ERR: " << e.what();
+    cout << " (MySQL error code: " << e.getErrorCode();
+    cout << ", SQLState: " << e.getSQLState() << " )" << endl;
+}
+
+bool Database::logout(const std::string &basic_string) {
+    string userid = basic_string;
+    try {
+        stmt = getConnection()->createStatement();
+        stmt->execute("UPDATE users set last_logout = NOW() WHERE id = '" + userid + "'");
+
+        cout << "query seccess" << endl;
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+        return false;
+    }
+    cout << endl;
+
+    return true;
 }

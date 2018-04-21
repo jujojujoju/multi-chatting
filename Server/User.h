@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <pthread.h>
 #include <util.h>
 #include <string>
 
@@ -34,6 +35,8 @@ private:
     string status;
 
     vector<User*> *userList;
+
+    User* findUser(string id);
 
     void run();
 
@@ -76,6 +79,8 @@ public:
     Json::Value getUser() const;
 
     void sendMessage(Json::Value value);
+
+    void sendMessageAll(Json::Value value);
 };
 
 

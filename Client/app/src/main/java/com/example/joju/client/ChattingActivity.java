@@ -4,15 +4,18 @@ import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.JsonReader;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.*;
 
+import org.json.JSONObject;
+
+import java.util.Objects;
+
 public class ChattingActivity extends AppCompatActivity {
-
-    private static final String TAG = "ChatActivity";
-
+    private TCPThread tcpThread = null;
     private ChatArrayAdapter chatArrayAdapter;
     private ListView listView;
     private EditText chatText;
@@ -22,14 +25,17 @@ public class ChattingActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chatting);
 
-        System.out.println("chatting activity");
-        Toast.makeText(ChattingActivity.this, "enjoy chatting !!", Toast.LENGTH_SHORT).show();
+        tcpThread = new TCPThread(this);
 
         Intent intent = getIntent();
-        TCPThread tcpThread = intent.getParcelableExtra("tcpThread");
-        System.out.println(tcpThread.getUserName());
-        System.out.println("===============================");
+        String id = intent.getStringExtra("id");
+        String pwd = intent.getStringExtra("pwd");
 
+        tcpThread.setID(id);
+        tcpThread.setPassword(pwd);
+        tcpThread.start();
+
+        Toast.makeText(ChattingActivity.this, "enjoy chatting !!", Toast.LENGTH_SHORT).show();
 
         Button buttonSend = (Button) findViewById(R.id.send);
 
@@ -41,13 +47,16 @@ public class ChattingActivity extends AppCompatActivity {
         chatText = (EditText) findViewById(R.id.msg);
         chatText.setOnKeyListener(new View.OnKeyListener() {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-                return (event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER) && sendChatMessage();
+                return (event.getAction() == KeyEvent.ACTION_DOWN)
+                        && (keyCode == KeyEvent.KEYCODE_ENTER)
+                        && sendChatMessage(chatText.getText().toString());
             }
         });
         buttonSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                sendChatMessage();
+                if(!chatText.getText().toString().equals(""))
+                    sendChatMessage(chatText.getText().toString());
             }
         });
 
@@ -64,11 +73,51 @@ public class ChattingActivity extends AppCompatActivity {
         });
     }
 
-    private boolean sendChatMessage() {
-        chatArrayAdapter.add(new ChatMessage(side, chatText.getText().toString()));
-        chatText.setText("");
-        side = !side;
+    public void printChat(JSONObject value) {
+        try {
+            if(value.getJSONObject("user").getString("id").equals(tcpThread.getUserId())){
+                chatArrayAdapter.add(new ChatMessage(true, value.getString("data"), value.getString("time")));
+                chatText.setText("");
+            }else{
+                chatArrayAdapter.add(new ChatMessage(false, value.getString("data"), value.getString("time"), value.getJSONObject("user").getString("id")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean sendChatMessage(String msg) {
+        if (!tcpThread.isLogin()) {
+            return false;
+        }
+        Thread t = new Thread(new SendChatRunnable(msg));
+        t.start();
+        try {
+            t.join();
+        } catch (Exception e) {}
+
         return true;
     }
+
+    private class SendChatRunnable implements Runnable {
+        private String msg;
+        public SendChatRunnable(String msg) {
+            this.msg = msg;
+        }
+        @Override
+        public void run() {
+            tcpThread.sendMessage(msg);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (tcpThread != null) {
+            tcpThread.interrupt();
+            tcpThread.Destroy();
+        }
+    }
+
 
 }

@@ -1,6 +1,7 @@
 #include "User.h"
 #include "UserManager.h"
-
+#include <iomanip>
+#include <ctime>
 User::~User() {
     close(client_socket);
 }
@@ -9,7 +10,7 @@ User::User(int cs, sockaddr_in ca) {
     client_socket = cs;
     client_address = ca;
     userList = NULL;
-    setStatus("offline");
+    setStatus("offLine");
 }
 
 
@@ -75,21 +76,27 @@ void User::processMessage(string msg) {
 
 void User::login(Json::Value value) {
     Json::Value user = value["user"];
-
-    setID(user["id"].asString());
-    setPwd(user["pwd"].asString());
-
     Json::Value resp;
     resp["type"] = TYPE::RESPONSE;
     resp["time"] = (uint32_t) getTime();
 
+    if (findUser(user["id"].asString())) {
+        resp["name"] = "";
+        resp["data"] = "alreay exists";
+        sendMessage(resp);
+        return;
+    }
+
+    setID(user["id"].asString());
+    setPwd(user["pwd"].asString());
+
     string username = database.login(getID(), getPwd());
-    cout << username << endl;
     if (username != "") {
         setStatus("online");
         setName(username);
         resp["user"] = getUser();
         resp["data"] = "ok";
+        resp["messages"] = "";
         sendMessage(resp);
         cout << "login user : " << userList->size() << endl;
     } else {
@@ -129,12 +136,31 @@ void User::signin(Json::Value value) {
     }
 
 }
-
+std::wstring wtime(const time_t &t) {
+    std::tm tm = *std::localtime(&t);
+    std::wstringstream wss;
+    wss << std::put_time(&tm, L"%F %T");
+    return wss.str();
+}
 void User::chat(Json::Value value) {
+    Json::Value user = value["user"];
+    cout << value["msg"].asString() << endl;
 
+    Json::Value resp;
+    resp["type"] = TYPE::CHAT;
+
+    string stringtime;
+    wstring wstringtime = wtime(getTime());
+    resp["time"] = (stringtime.assign(wstringtime.begin(), wstringtime.end())).c_str();
+    resp["user"] = getUser();
+    resp["data"] = value["msg"].asString();
+    sendMessageAll(resp);
 }
 
 void User::leaveUser() {
+
+    database.logout(getID());
+
     UserManager::mutexLock();
     for (auto iter = userList->begin(); iter != userList->end();) {
         if ((*iter)->getID() == getID()) {
@@ -146,8 +172,15 @@ void User::leaveUser() {
         }
     }
     cout << "leave user : " << userList->size() << endl;
-
     UserManager::mutexUnLock();
+
+}
+
+void User::sendMessageAll(Json::Value value) {
+    database.storeMessage(value);
+    for (auto iter = userList->begin(); iter != userList->end(); iter++) {
+        (*iter)->sendMessage(value);
+    }
 }
 
 void User::sendMessage(Json::Value value) {
@@ -159,16 +192,20 @@ void User::sendMessage(Json::Value value) {
 
     cout << "send : " << size << endl;
 
+    UserManager::mutexLock();
     if (send(client_socket, &s, sizeof(s), 0) <= 0) {
+        UserManager::mutexUnLock();
         throw exception();
     }
 
     if (send(client_socket, msg.c_str(), size, 0) <= 0) {
+        UserManager::mutexUnLock();
         throw exception();
     }
+    UserManager::mutexUnLock();
 }
 
-void User::setUserList(vector < User * > *ulist) {
+void User::setUserList(vector<User *> *ulist) {
     userList = ulist;
 }
 
@@ -214,4 +251,12 @@ const string &User::getStatus() const {
 
 void User::setStatus(const string &status) {
     User::status = status;
+}
+
+User *User::findUser(string id) {
+    if (id == "") return NULL;
+    for (auto iter = userList->begin(); iter != userList->end(); iter++) {
+        if ((*iter)->getID() == id) return *iter;
+    }
+    return NULL;
 }

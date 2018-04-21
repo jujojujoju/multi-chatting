@@ -42,7 +42,11 @@ class ChatArrayAdapter extends ArrayAdapter<ChatMessage> {
             row = inflater.inflate(R.layout.right, parent, false);
         }else{
             row = inflater.inflate(R.layout.left, parent, false);
+            TextView profileText = (TextView) row.findViewById(R.id.profile);
+            profileText.setText(chatMessageObj.name);
         }
+        TextView timeText = (TextView) row.findViewById(R.id.time);
+        timeText.setText(chatMessageObj.time.substring(11,16));
         TextView chatText = (TextView) row.findViewById(R.id.msgr);
         chatText.setText(chatMessageObj.message);
         return row;

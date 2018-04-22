@@ -25,7 +25,7 @@ string Database::login(const std::string &userid, const std::string &userPasswor
         stmt = getConnection()->createStatement();
         res = stmt->executeQuery(
                 "select name from users WHERE id='" + userid + "' AND password='" + userPassword + "'");
-        cout << "query seccess" << endl;
+        cout << "query success" << endl;
 
         while (res->next()) {
             cout << "\t... MySQL replies: ";
@@ -48,6 +48,40 @@ string Database::login(const std::string &userid, const std::string &userPasswor
     return username;
 }
 
+Json::Value Database::getMessages(const std::string &userid) {
+    Json::Value temp;
+    Json::Value messages;
+    Json::Value message;
+    try {
+        /* Select in ascending order */
+        stmt = getConnection()->createStatement();
+        res = stmt->executeQuery("SELECT m.sender, m.contents, m.sended "
+                                         "FROM users u INNER JOIN messages m "
+                                         "on u.id='" + userid + "' "
+                                         "and m.sended >= u.last_logout "
+                                         "AND m.sended <= u.last_login");
+        cout << "query success" << endl;
+
+        while (res->next()) {
+            cout << "\t... MySQL replies: ";
+            message["sender"] = res->getString("sender").asStdString();
+            message["sended"] = res->getString("sended").asStdString();
+            message["contents"] = res->getString("contents").asStdString();
+            messages.append(message);
+        }
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+    }
+    cout << endl;
+
+    return messages;
+}
+
+
 bool Database::idCheck(string userid) {
     bool isexist = false;
     try {
@@ -55,7 +89,7 @@ bool Database::idCheck(string userid) {
         stmt = getConnection()->createStatement();
         res = stmt->executeQuery(
                 "SELECT id FROM USERS WHERE id='" + userid + "'");
-        cout << "query seccess" << endl;
+        cout << "query success" << endl;
 
         if (res->next() > 0) {
             isexist = true;
@@ -89,7 +123,7 @@ bool Database::createUser(Json::Value user) {
         stmt->execute("INSERT INTO users(id, name, password, last_login) VALUES ('" + userid + "', '" + username +
                       "', '" + userpassword + "', NOW());");
 
-        cout << "query seccess" << endl;
+        cout << "query success" << endl;
         ok = true;
 
         delete stmt;
@@ -111,7 +145,7 @@ bool Database::storeMessage(Json::Value value) {
         stmt = getConnection()->createStatement();
         stmt->execute("Insert Into messages(sender, contents, sended) VALUES ('" + username + "', '" + contents +
                       "', NOW());");
-        cout << "query seccess" << endl;
+        cout << "query success" << endl;
 
         delete stmt;
         delete con;
@@ -139,7 +173,7 @@ bool Database::logout(const std::string &basic_string) {
         stmt = getConnection()->createStatement();
         stmt->execute("UPDATE users set last_logout = NOW() WHERE id = '" + userid + "'");
 
-        cout << "query seccess" << endl;
+        cout << "query success" << endl;
 
         delete stmt;
         delete con;

@@ -2,6 +2,7 @@
 #include "UserManager.h"
 #include <iomanip>
 #include <ctime>
+
 User::~User() {
     close(client_socket);
 }
@@ -20,7 +21,7 @@ void User::run() {
     uint64_t size;
     uint64_t read_byte;
     char buf[4096];
-
+    int type = 0;
     try {
         while (1) {
             cout << "message processing..." << endl;
@@ -42,21 +43,20 @@ void User::run() {
                 buf[read_byte] = 0;
                 ss << buf;
             }
-            processMessage(ss.str());
+            type = processMessage(ss.str());
         }
     } catch (...) {}
-    leaveUser();
+    leaveUser(type);
 }
 
 
-void User::processMessage(string msg) {
+int User::processMessage(string msg) {
     Json::Value root;
     Json::Reader reader;
-    if (!reader.parse(msg, root)) return;
+    if (!reader.parse(msg, root)) return 0;
 
+    int type = stoi(root["type"].asString());
     try {
-        int type = stoi(root["type"].asString());
-
         switch (type) {
             case TYPE::LOGIN:
                 login(root);
@@ -67,11 +67,22 @@ void User::processMessage(string msg) {
             case TYPE::CHAT:
                 chat(root);
                 break;
+            case TYPE ::GETMESSAGES:
+                getMessages(root);
+                break;
             default:
                 break;
         }
     } catch (...) {}
-
+    return type;
+}
+void User::getMessages(Json::Value value) {
+    Json::Value user = value["user"];
+    Json::Value resp;
+    resp["type"] = TYPE::RESPONSE;
+    resp["time"] = (uint32_t) getTime();
+    resp["messages"] = database.getMessages(user["id"].asString());
+    sendMessage(resp);
 }
 
 void User::login(Json::Value value) {
@@ -96,7 +107,6 @@ void User::login(Json::Value value) {
         setName(username);
         resp["user"] = getUser();
         resp["data"] = "ok";
-        resp["messages"] = "";
         sendMessage(resp);
         cout << "login user : " << userList->size() << endl;
     } else {
@@ -136,12 +146,14 @@ void User::signin(Json::Value value) {
     }
 
 }
+
 std::wstring wtime(const time_t &t) {
     std::tm tm = *std::localtime(&t);
     std::wstringstream wss;
     wss << std::put_time(&tm, L"%F %T");
     return wss.str();
 }
+
 void User::chat(Json::Value value) {
     Json::Value user = value["user"];
     cout << value["msg"].asString() << endl;
@@ -157,9 +169,9 @@ void User::chat(Json::Value value) {
     sendMessageAll(resp);
 }
 
-void User::leaveUser() {
-
-    database.logout(getID());
+void User::leaveUser(int type) {
+    if(type == CHAT)
+        database.logout(getID());
 
     UserManager::mutexLock();
     for (auto iter = userList->begin(); iter != userList->end();) {
@@ -173,7 +185,6 @@ void User::leaveUser() {
     }
     cout << "leave user : " << userList->size() << endl;
     UserManager::mutexUnLock();
-
 }
 
 void User::sendMessageAll(Json::Value value) {
@@ -256,7 +267,10 @@ void User::setStatus(const string &status) {
 User *User::findUser(string id) {
     if (id == "") return NULL;
     for (auto iter = userList->begin(); iter != userList->end(); iter++) {
-        if ((*iter)->getID() == id) return *iter;
+        if ((*iter)->getID() == id) {
+            return *iter;
+        }
     }
     return NULL;
 }
+

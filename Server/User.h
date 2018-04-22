@@ -21,7 +21,8 @@ enum TYPE {
     RESPONSE = 100,
     CHAT = 200,
     LOGIN = 300,
-    SIGNIN = 400
+    SIGNIN = 400,
+    GETMESSAGES = 500
 };
 
 class User : public CThread{
@@ -64,9 +65,9 @@ public:
 
     void setUserList(vector<User*> *ulist);
 
-    void processMessage(string msg);
+    int processMessage(string msg);
 
-    void leaveUser();
+    void leaveUser(int type);
 
     void login(Json::Value value);
 
@@ -81,6 +82,8 @@ public:
     void sendMessage(Json::Value value);
 
     void sendMessageAll(Json::Value value);
+
+    void getMessages(Json::Value value);
 };
 
 

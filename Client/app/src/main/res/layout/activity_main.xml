@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:hint="ID"
-        android:text="qqq"
+        android:text="jj"
         android:id="@+id/IDInput"
         android:layout_centerVertical="true" />
 
@@ -40,7 +40,7 @@
         android:layout_centerHorizontal="true"
         android:hint="PassWord"
         android:id="@+id/PasswordInput"
-        android:text="123"
+        android:text="jj"
         android:layout_below="@id/IDInput"
         android:password="true" />
 

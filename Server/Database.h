@@ -20,6 +20,7 @@ public:
     sql::Driver * getDriver();
     sql::Connection * getConnection();
     std::string login(const std::string &string, const std::string &basic_string);
+    Json::Value getMessages(const std::string &string);
 
     bool idCheck(std::string userid);
 

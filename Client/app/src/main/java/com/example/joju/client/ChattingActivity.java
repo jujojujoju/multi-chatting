@@ -10,6 +10,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.*;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.Objects;
@@ -55,7 +56,7 @@ public class ChattingActivity extends AppCompatActivity {
         buttonSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                if(!chatText.getText().toString().equals(""))
+                if (!chatText.getText().toString().equals(""))
                     sendChatMessage(chatText.getText().toString());
             }
         });
@@ -75,11 +76,24 @@ public class ChattingActivity extends AppCompatActivity {
 
     public void printChat(JSONObject value) {
         try {
-            if(value.getJSONObject("user").getString("id").equals(tcpThread.getUserId())){
+            System.out.println("chat message");
+            if (value.getJSONObject("user").getString("id").equals(tcpThread.getUserId())) {
                 chatArrayAdapter.add(new ChatMessage(true, value.getString("data"), value.getString("time")));
                 chatText.setText("");
-            }else{
+            } else {
                 chatArrayAdapter.add(new ChatMessage(false, value.getString("data"), value.getString("time"), value.getJSONObject("user").getString("id")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printChatArray(JSONArray msgs) {
+        try {
+            JSONObject obj;
+            for (int i = 0; i < msgs.length(); i++) {
+                obj = msgs.getJSONObject(i);
+                chatArrayAdapter.add(new ChatMessage(false, obj.getString("contents"), obj.getString("sended"), obj.getString("sender")));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -94,16 +108,19 @@ public class ChattingActivity extends AppCompatActivity {
         t.start();
         try {
             t.join();
-        } catch (Exception e) {}
-
+        } catch (Exception e) {
+        }
         return true;
     }
 
+
     private class SendChatRunnable implements Runnable {
         private String msg;
+
         public SendChatRunnable(String msg) {
             this.msg = msg;
         }
+
         @Override
         public void run() {
             tcpThread.sendMessage(msg);

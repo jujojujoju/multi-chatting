@@ -35,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
                 tcpThread.Destroy();
 
                 if (tcpThread.isLogin()) {
-                    goChatActivity();
+//                    goChatActivity();
+                    goUserListActivity();
                 } else {
                     Toast.makeText(MainActivity.this, "login fail!!", Toast.LENGTH_SHORT).show();
                 }
@@ -49,13 +50,13 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
-    private void goChatActivity() {
-        Intent intent2Chatting = new Intent(this, ChattingActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
+    private void goUserListActivity() {
+        Intent intent2Chatting = new Intent(this, UserListActivity.class);      ////인텐트 객체 하나 생성 후 메모리 할당 후 보내는액티비티와 받는 액티비티 입력
         intent2Chatting.putExtra("id", tcpThread.getUserId());
         intent2Chatting.putExtra("pwd", tcpThread.getPassword());
         intent2Chatting.putExtra("name", tcpThread.getUserName());
         startActivity(intent2Chatting);
-        System.out.println("start Catting Activity");
+        System.out.println("start UserList Activity");
 
         Toast.makeText(this, "Hello " + tcpThread.getUserName(), Toast.LENGTH_SHORT).show();
     }

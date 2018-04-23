@@ -31,6 +31,12 @@ public:
     void printDBError(const sql::SQLException &e) const;
 
     bool logout(const std::string &basic_string);
+
+    Json::Value getUserList(std::string string);
+
+    Json::Value getPersonalMessages(std::string userid, std::string targetid);
+
+    bool storePersonalMessage(Json::Value value);
 };
 
 #endif //MULTICHATTING_DATABASE_H

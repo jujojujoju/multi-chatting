@@ -67,8 +67,17 @@ int User::processMessage(string msg) {
             case TYPE::CHAT:
                 chat(root);
                 break;
-            case TYPE ::GETMESSAGES:
+            case TYPE ::GET_MESSAGE:
                 getMessages(root);
+                break;
+            case TYPE ::GET_PERSONAL_MESSAGE:
+                getPersonalMessages(root);
+                break;
+            case TYPE ::GET_USERLIST:
+                getUserList(root);
+                break;
+            case TYPE ::PERSONAL_CHAT:
+                personalChat(root);
                 break;
             default:
                 break;
@@ -76,6 +85,25 @@ int User::processMessage(string msg) {
     } catch (...) {}
     return type;
 }
+
+void User::getUserList(Json::Value value) {
+    Json::Value user = value["user"];
+    Json::Value resp;
+    resp["type"] = TYPE::RESPONSE;
+    resp["time"] = (uint32_t) getTime();
+    resp["userlist"] = database.getUserList(user["id"].asString());
+    sendMessage(resp);
+}
+
+void User::getPersonalMessages(Json::Value value) {
+    Json::Value user = value["user"];
+    Json::Value resp;
+    resp["type"] = TYPE::RESPONSE;
+    resp["time"] = (uint32_t) getTime();
+    resp["messages"] = database.getPersonalMessages(user["id"].asString(), value["targetID"].asString());
+    sendMessage(resp);
+}
+
 void User::getMessages(Json::Value value) {
     Json::Value user = value["user"];
     Json::Value resp;
@@ -154,6 +182,22 @@ std::wstring wtime(const time_t &t) {
     return wss.str();
 }
 
+void User::personalChat(Json::Value value) {
+    Json::Value user = value["user"];
+    cout << value["msg"].asString() << endl;
+
+    Json::Value resp;
+    resp["type"] = TYPE::PERSONAL_CHAT;
+
+    string stringtime;
+    wstring wstringtime = wtime(getTime());
+    resp["time"] = (stringtime.assign(wstringtime.begin(), wstringtime.end())).c_str();
+    resp["user"] = getUser();
+    resp["target"] = value["targetID"];
+    resp["data"] = value["msg"].asString();
+    sendMessage2Target(resp);
+}
+
 void User::chat(Json::Value value) {
     Json::Value user = value["user"];
     cout << value["msg"].asString() << endl;
@@ -166,6 +210,8 @@ void User::chat(Json::Value value) {
     resp["time"] = (stringtime.assign(wstringtime.begin(), wstringtime.end())).c_str();
     resp["user"] = getUser();
     resp["data"] = value["msg"].asString();
+    cout << resp << endl;
+    cout << resp["user"]["id"].asString() << endl;
     sendMessageAll(resp);
 }
 
@@ -194,9 +240,34 @@ void User::sendMessageAll(Json::Value value) {
     }
 }
 
+void User::sendMessage2Target(Json::Value value) {
+    database.storePersonalMessage(value);
+
+    Json::StyledWriter writer;
+    string msg = writer.write(value);
+
+    uint64_t size = msg.size() + 1;
+    uint64_t s = htonll(size);
+
+    cout << "send : " << size << endl;
+
+    UserManager::mutexLock();
+    if (send(client_socket, &s, sizeof(s), 0) <= 0) {
+        UserManager::mutexUnLock();
+        throw exception();
+    }
+
+    if (send(client_socket, msg.c_str(), size, 0) <= 0) {
+        UserManager::mutexUnLock();
+        throw exception();
+    }
+    UserManager::mutexUnLock();
+
+}
 void User::sendMessage(Json::Value value) {
     Json::StyledWriter writer;
     string msg = writer.write(value);
+    cout << msg << endl;
 
     uint64_t size = msg.size() + 1;
     uint64_t s = htonll(size);
@@ -273,4 +344,8 @@ User *User::findUser(string id) {
     }
     return NULL;
 }
+
+
+
+
 

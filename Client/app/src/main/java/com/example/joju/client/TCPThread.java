@@ -24,6 +24,7 @@ public class TCPThread extends Thread {
     private Boolean is_signup = false;
     private Activity activity;
     private Socket socket_init = null;
+    private String target;
 
     public TCPThread(Activity act) {
         setActivity(act);
@@ -51,6 +52,14 @@ public class TCPThread extends Thread {
 
     public boolean isSignup() {
         return is_signup;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
+    }
+
+    public String getTarget() {
+        return target;
     }
 
     public void setResponse(String res) {
@@ -102,16 +111,91 @@ public class TCPThread extends Thread {
                     if (!login_signup(true)) {
                         break;
                     }
-                    getStackedMessages();
+                    if(getTarget().equals("AllUser")) {
+                        getStackedMessages();
+                    }else{
+                        getStackedPersonalMessages(getTarget());
+                    }
                     runChat();
                 } else if (this.activity.getClass().getName().equals(SigninActivity.class.getName())) {
                     login_signup(false);
+                    break;
+                } else if (this.activity.getClass().getName().equals(UserListActivity.class.getName())) {
+                    getUserList();
                     break;
                 }
             } catch (Exception e) {
                 goMainActivity();
             }
         }
+    }
+
+
+    private boolean getUserList() {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("user", getUserJson());
+            json.put("type", 700);
+        } catch (Exception e) {
+            return false;
+        }
+        String data = json.toString();
+        System.out.println(data);
+
+        try {
+            BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
+            bos.write(longToBytes(data.length()));
+            bos.write(data.getBytes());
+            bos.flush();
+
+            JSONObject responseObj = readMessage();
+            System.out.println("response :  \n" + responseObj);
+
+            if (responseObj.isNull("userlist")) {
+                System.out.println("userlist : nothing");
+            } else {
+                printUserList(responseObj.getJSONArray("userlist"));
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean getStackedPersonalMessages(String target) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("user", getUserJson());
+            json.put("targetID", target);
+            json.put("type", 600);
+        } catch (Exception e) {
+            return false;
+        }
+        String data = json.toString();
+        System.out.println(data);
+
+        try {
+            BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
+            bos.write(longToBytes(data.length()));
+            bos.write(data.getBytes());
+            bos.flush();
+
+            JSONObject responseObj = readMessage();
+            System.out.println("response :  \n" + responseObj);
+
+            if (responseObj.isNull("messages")) {
+                System.out.println("messages : nothing");
+                return false;
+            } else {
+                printChatArray(responseObj.getJSONArray("messages"));
+            }
+
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+        }
+        return true;
+
     }
 
     private boolean getStackedMessages() {
@@ -136,8 +220,9 @@ public class TCPThread extends Thread {
 
             if (responseObj.isNull("messages")) {
                 System.out.println("messages : nothing");
+                return false;
             } else {
-                runChat(responseObj.getJSONArray("messages"));
+                printChatArray(responseObj.getJSONArray("messages"));
             }
 
         } catch (IOException | JSONException e) {
@@ -223,15 +308,18 @@ public class TCPThread extends Thread {
         return null;
     }
 
-    public void sendMessage(String msg) {
+
+    public void sendMessage(String msg, String target) {
         JSONObject json = new JSONObject();
         try {
-            json.put("type", 200);
+            json.put("type", 800);
             json.put("user", getUserJson());
+            json.put("targetID", target);
             json.put("msg", msg);
         } catch (Exception e) {
             return;
         }
+
         String data = json.toString();
         try {
             BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
@@ -243,6 +331,37 @@ public class TCPThread extends Thread {
         }
     }
 
+    public void sendMessage(String msg) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("type", 200);
+            json.put("user", getUserJson());
+            json.put("msg", msg);
+        } catch (Exception e) {
+            return;
+        }
+
+        String data = json.toString();
+        try {
+            BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
+            bos.write(longToBytes(data.length()));
+            bos.write(data.getBytes());
+            bos.flush();
+        } catch (Exception e) {
+        } finally {
+        }
+    }
+
+    private void printUserList(final JSONArray userlist) {
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                UserListActivity userListActivity = (UserListActivity) TCPThread.this.activity;
+                userListActivity.printUserList(userlist);
+            }
+        });
+    }
+
     private void runChat() {
         while (!Thread.currentThread().isInterrupted()) {
             final JSONObject msg = TCPThread.this.readMessage();
@@ -250,13 +369,14 @@ public class TCPThread extends Thread {
                 @Override
                 public void run() {
                     ChattingActivity chattingActivity = (ChattingActivity) TCPThread.this.activity;
+                    System.out.println(msg);
                     chattingActivity.printChat(msg);
                 }
             });
         }
     }
 
-    private void runChat(final JSONArray msgs) {
+    private void printChatArray(final JSONArray msgs) {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {

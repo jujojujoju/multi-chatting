@@ -22,7 +22,10 @@ enum TYPE {
     CHAT = 200,
     LOGIN = 300,
     SIGNIN = 400,
-    GETMESSAGES = 500
+    GET_MESSAGE = 500,
+    GET_PERSONAL_MESSAGE = 600,
+    GET_USERLIST = 700,
+    PERSONAL_CHAT = 800
 };
 
 class User : public CThread{
@@ -84,6 +87,14 @@ public:
     void sendMessageAll(Json::Value value);
 
     void getMessages(Json::Value value);
+
+    void getUserList(Json::Value value);
+
+    void personalChat(Json::Value value);
+
+    void getPersonalMessages(Json::Value value);
+
+    void sendMessage2Target(Json::Value value);
 };
 
 

@@ -20,7 +20,6 @@ public class ChattingActivity extends AppCompatActivity {
     private ChatArrayAdapter chatArrayAdapter;
     private ListView listView;
     private EditText chatText;
-    private boolean side = false;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,8 +30,10 @@ public class ChattingActivity extends AppCompatActivity {
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
         String pwd = intent.getStringExtra("pwd");
+        String target = intent.getStringExtra("targetID");
 
         tcpThread.setID(id);
+        tcpThread.setTarget(target);
         tcpThread.setPassword(pwd);
         tcpThread.start();
 
@@ -81,7 +82,7 @@ public class ChattingActivity extends AppCompatActivity {
                 chatArrayAdapter.add(new ChatMessage(true, value.getString("data"), value.getString("time")));
                 chatText.setText("");
             } else {
-                chatArrayAdapter.add(new ChatMessage(false, value.getString("data"), value.getString("time"), value.getJSONObject("user").getString("id")));
+                chatArrayAdapter.add(new ChatMessage(false, value.getString("data"), value.getString("time"), value.getJSONObject("user").getString("name")));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,39 +94,36 @@ public class ChattingActivity extends AppCompatActivity {
             JSONObject obj;
             for (int i = 0; i < msgs.length(); i++) {
                 obj = msgs.getJSONObject(i);
-                chatArrayAdapter.add(new ChatMessage(false, obj.getString("contents"), obj.getString("sended"), obj.getString("sender")));
+                if (!obj.getString("senderID").equals(tcpThread.getUserId()))
+                    chatArrayAdapter.add(new ChatMessage(false, obj.getString("contents"), obj.getString("sended"), obj.getString("sender")));
+                else
+                    chatArrayAdapter.add(new ChatMessage(true, obj.getString("contents"), obj.getString("sended")));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private boolean sendChatMessage(String msg) {
-        if (!tcpThread.isLogin()) {
-            return false;
-        }
-        Thread t = new Thread(new SendChatRunnable(msg));
+    private boolean sendChatMessage(final String msg) {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (!tcpThread.getTarget().equals("AllUser")) {
+                    tcpThread.sendMessage(msg, tcpThread.getTarget());
+                } else {
+                    tcpThread.sendMessage(msg);
+                }
+            }
+        });
         t.start();
         try {
             t.join();
         } catch (Exception e) {
         }
         return true;
+
     }
 
-
-    private class SendChatRunnable implements Runnable {
-        private String msg;
-
-        public SendChatRunnable(String msg) {
-            this.msg = msg;
-        }
-
-        @Override
-        public void run() {
-            tcpThread.sendMessage(msg);
-        }
-    }
 
     @Override
     protected void onStop() {

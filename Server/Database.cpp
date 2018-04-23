@@ -35,7 +35,7 @@ string Database::login(const std::string &userid, const std::string &userPasswor
             cout << "login success" << endl;
         }
 //        update user last login time
-        stmt->execute("UPDATE users set last_login = NOW() WHERE id = '" + userid + "'");
+        stmt->execute("UPDATE users set last_login = NOW() , status='online' WHERE id = '" + userid + "'");
 
         delete stmt;
         delete con;
@@ -48,23 +48,54 @@ string Database::login(const std::string &userid, const std::string &userPasswor
     return username;
 }
 
-Json::Value Database::getMessages(const std::string &userid) {
-    Json::Value temp;
+Json::Value Database::getPersonalMessages(std::string userid, std::string targetid) {
     Json::Value messages;
     Json::Value message;
     try {
         /* Select in ascending order */
         stmt = getConnection()->createStatement();
-        res = stmt->executeQuery("SELECT m.sender, m.contents, m.sended "
-                                         "FROM users u INNER JOIN messages m "
-                                         "on u.id='" + userid + "' "
-                                         "and m.sended >= u.last_logout "
-                                         "AND m.sended <= u.last_login");
+        res = stmt->executeQuery(
+                "SELECT * FROM personal_messages WHERE (senderID='" + userid + "' AND receiverID='" + targetid +
+                "') or (senderID='" + targetid + "' AND receiverID='" + userid + "');");
+
         cout << "query success" << endl;
 
         while (res->next()) {
             cout << "\t... MySQL replies: ";
             message["sender"] = res->getString("sender").asStdString();
+            message["receiver"] = res->getString("receiver").asStdString();
+            message["senderID"] = res->getString("senderID").asStdString();
+            message["receiverID"] = res->getString("receiverID").asStdString();
+            message["sended"] = res->getString("send_time").asStdString();
+            message["contents"] = res->getString("contents").asStdString();
+            messages.append(message);
+        }
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+    }
+    cout << endl;
+
+    return messages;
+}
+
+Json::Value Database::getMessages(const std::string &userid) {
+    Json::Value messages;
+    Json::Value message;
+    try {
+        /* Select in ascending order */
+        stmt = getConnection()->createStatement();
+        res = stmt->executeQuery("SELECT * FROM MESSAGES");
+
+        cout << "query success" << endl;
+
+        while (res->next()) {
+            cout << "\t... MySQL replies: ";
+            message["sender"] = res->getString("sender").asStdString();
+            message["senderID"] = res->getString("senderID").asStdString();
             message["sended"] = res->getString("sended").asStdString();
             message["contents"] = res->getString("contents").asStdString();
             messages.append(message);
@@ -81,6 +112,33 @@ Json::Value Database::getMessages(const std::string &userid) {
     return messages;
 }
 
+Json::Value Database::getUserList(std::string userid) {
+    Json::Value users;
+    Json::Value user;
+    try {
+        /* Select in ascending order */
+        stmt = getConnection()->createStatement();
+        res = stmt->executeQuery("SELECT * FROM USERS WHERE id != '" + userid + "'");
+        cout << "query success" << endl;
+
+        while (res->next()) {
+            cout << "\t... MySQL replies: ";
+            user["name"] = res->getString("name").asStdString();
+            user["status"] = res->getString("status").asStdString();
+            user["id"] = res->getString("id").asStdString();
+            users.append(user);
+        }
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+    }
+    cout << endl;
+
+    return users;
+}
 
 bool Database::idCheck(string userid) {
     bool isexist = false;
@@ -137,13 +195,50 @@ bool Database::createUser(Json::Value user) {
     return ok;
 }
 
+bool Database::storePersonalMessage(Json::Value value) {
+    string username = value["user"]["name"].asString();
+    string userid = value["user"]["id"].asString();
+    string targetid = value["target"].asString();
+    string contents = value["data"].asString();
+    string targetUsername;
+
+    try {
+
+        stmt = getConnection()->createStatement();
+        res = stmt->executeQuery("SELECT name FROM USERS WHERE id = '" + targetid + "'");
+        cout << "query success" << endl;
+
+        while (res->next()) {
+            cout << "\t... MySQL replies: ";
+            targetUsername = res->getString("name").asStdString();
+        }
+
+        stmt->execute(
+                "INSERT INTO personal_messages (sender, senderID, contents, receiver, receiverID, send_time) VALUES ('" +
+                username + "','" + userid + "', '" + contents + "', '" + targetUsername + "', '" + targetid +
+                "' , NOW());");
+        cout << "query success" << endl;
+
+        delete stmt;
+        delete con;
+
+    } catch (sql::SQLException &e) {
+        printDBError(e);
+        return false;
+    }
+    cout << endl;
+
+    return true;
+}
+
 bool Database::storeMessage(Json::Value value) {
     string username = value["user"]["name"].asString();
     string contents = value["data"].asString();
-
+    string userid = value["user"]["id"].asString();
     try {
         stmt = getConnection()->createStatement();
-        stmt->execute("Insert Into messages(sender, contents, sended) VALUES ('" + username + "', '" + contents +
+        stmt->execute("Insert Into messages(senderID, sender, contents, sended) VALUES ('" + userid + "','" + username +
+                      "', '" + contents +
                       "', NOW());");
         cout << "query success" << endl;
 
@@ -171,7 +266,7 @@ bool Database::logout(const std::string &basic_string) {
     string userid = basic_string;
     try {
         stmt = getConnection()->createStatement();
-        stmt->execute("UPDATE users set last_logout = NOW() WHERE id = '" + userid + "'");
+        stmt->execute("UPDATE users set last_logout = NOW(), status='offline' WHERE id = '" + userid + "'");
 
         cout << "query success" << endl;
 
@@ -186,3 +281,5 @@ bool Database::logout(const std::string &basic_string) {
 
     return true;
 }
+
+

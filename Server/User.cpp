@@ -216,7 +216,7 @@ void User::chat(Json::Value value) {
 }
 
 void User::leaveUser(int type) {
-    if(type == CHAT)
+    if(type == GET_USERLIST)
         database.logout(getID());
 
     UserManager::mutexLock();

@@ -6,10 +6,12 @@ import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -20,7 +22,6 @@ public class UserListActivity extends AppCompatActivity {
     private TCPThread tcpThread = null;
     private UserListAdapter userListAdapter;
     private ListView listView;
-    private EditText chatText;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +37,7 @@ public class UserListActivity extends AppCompatActivity {
         tcpThread.setPassword(pwd);
         tcpThread.start();
 
+//        updateStatus();
 //        try {
 //            tcpThread.join();
 //        } catch (Exception e) {
@@ -43,12 +45,15 @@ public class UserListActivity extends AppCompatActivity {
 //        tcpThread.Destroy();
 
         listView = (ListView) findViewById(R.id.userlist);
+//        listView = (ListView) findViewById(R.id.ListView);
 
         userListAdapter = new UserListAdapter(getApplicationContext(), R.layout.userprofile);
         listView.setAdapter(userListAdapter);
 
         listView.setTranscriptMode(AbsListView.TRANSCRIPT_MODE_ALWAYS_SCROLL);
-        listView.setAdapter(userListAdapter);
+//        listView.setAdapter(userListAdapter);
+//        setListViewHeightBasedOnChildren(listView);
+
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -67,6 +72,22 @@ public class UserListActivity extends AppCompatActivity {
                 listView.setSelection(userListAdapter.getCount() - 1);
             }
         });
+
+    }
+
+    private boolean updateStatus() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                tcpThread.sendStatus("online");
+            }
+        });
+        t.start();
+        try {
+            t.join();
+        } catch (Exception e) {
+        }
+        return true;
 
     }
 
@@ -98,9 +119,34 @@ public class UserListActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         if (tcpThread != null) {
+//            updateStatus();
+//            tcpThread.sendStatus("offline");
             tcpThread.interrupt();
             tcpThread.Destroy();
         }
     }
+
+    public static void setListViewHeightBasedOnChildren(ListView listView) {
+        ListAdapter listAdapter = listView.getAdapter();
+        if (listAdapter == null) {
+            // pre-condition
+            return;
+        }
+
+        int totalHeight = 0;
+        int desiredWidth = View.MeasureSpec.makeMeasureSpec(listView.getWidth(), View.MeasureSpec.AT_MOST);
+
+        for (int i = 0; i < listAdapter.getCount(); i++) {
+            View listItem = listAdapter.getView(i, null, listView);
+            listItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
+            totalHeight += listItem.getMeasuredHeight();
+        }
+
+        ViewGroup.LayoutParams params = listView.getLayoutParams();
+        params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
+        listView.setLayoutParams(params);
+        listView.requestLayout();
+    }
+
 
 }

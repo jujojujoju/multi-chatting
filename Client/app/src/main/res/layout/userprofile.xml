@@ -6,23 +6,22 @@
     <TextView
         android:id="@+id/name"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="5dp"
+        android:layout_height="80dp"
         android:layout_marginRight="5dp"
         android:paddingBottom="8dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:paddingTop="5dp"
+        android:paddingTop="25dp"
         android:text="Sampleleft"
         android:textColor="#000" />
 
     <TextView
         android:id="@+id/status"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="80dp"
         android:paddingBottom="8dp"
         android:paddingLeft="3dp"
-        android:paddingTop="5dp"
+        android:paddingTop="25dp"
         android:text="Sampleleft"
         android:textColor="#000"
         android:layout_marginRight="47dp"

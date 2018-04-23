@@ -111,9 +111,9 @@ public class TCPThread extends Thread {
                     if (!login_signup(true)) {
                         break;
                     }
-                    if(getTarget().equals("AllUser")) {
+                    if (getTarget().equals("AllUser")) {
                         getStackedMessages();
-                    }else{
+                    } else {
                         getStackedPersonalMessages(getTarget());
                     }
                     runChat();
@@ -122,11 +122,32 @@ public class TCPThread extends Thread {
                     break;
                 } else if (this.activity.getClass().getName().equals(UserListActivity.class.getName())) {
                     getUserList();
+//                    userUpdate();
                     break;
                 }
             } catch (Exception e) {
                 goMainActivity();
             }
+        }
+    }
+
+    private void userUpdate() {
+        while (!Thread.currentThread().isInterrupted()) {
+            final JSONObject responseObj = readMessage();
+
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (responseObj.isNull("userlist")) {
+                        System.out.println("userlist : nothing");
+                    } else {
+                        try {
+                            printUserList(responseObj.getJSONArray("userlist"));
+                        } catch (Exception e) {
+                        }
+                    }
+                }
+            });
         }
     }
 
@@ -321,6 +342,26 @@ public class TCPThread extends Thread {
         }
 
         String data = json.toString();
+        try {
+            BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
+            bos.write(longToBytes(data.length()));
+            bos.write(data.getBytes());
+            bos.flush();
+        } catch (Exception e) {
+        } finally {
+        }
+    }
+
+    public void sendStatus(String online) {
+        JSONObject json = new JSONObject();
+        try {
+            json.put("user", getUserJson());
+            json.put("type", 700);
+        } catch (Exception e) {
+            return;
+        }
+        String data = json.toString();
+        System.out.println(data);
         try {
             BufferedOutputStream bos = new BufferedOutputStream(socket_init.getOutputStream());
             bos.write(longToBytes(data.length()));

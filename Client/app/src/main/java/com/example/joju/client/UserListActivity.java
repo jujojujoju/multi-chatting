@@ -22,27 +22,19 @@ public class UserListActivity extends AppCompatActivity {
     private TCPThread tcpThread = null;
     private UserListAdapter userListAdapter;
     private ListView listView;
+    private String id;
+    private String pwd;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
 
-        tcpThread = new TCPThread(this);
+
 
         Intent intent = getIntent();
-        String id = intent.getStringExtra("id");
-        String pwd = intent.getStringExtra("pwd");
+        id = intent.getStringExtra("id");
+        pwd = intent.getStringExtra("pwd");
 
-        tcpThread.setID(id);
-        tcpThread.setPassword(pwd);
-        tcpThread.start();
-
-//        updateStatus();
-//        try {
-//            tcpThread.join();
-//        } catch (Exception e) {
-//        }
-//        tcpThread.Destroy();
 
         listView = (ListView) findViewById(R.id.userlist);
 //        listView = (ListView) findViewById(R.id.ListView);
@@ -59,10 +51,11 @@ public class UserListActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Toast.makeText(UserListActivity.this, userListAdapter.getItem(position).getId(), Toast.LENGTH_SHORT).show();
-                enterRoom(userListAdapter.getItem(position).getId());
-
+//                enterRoom(userListAdapter.getItem(position).getId());
+                getUserList();
             }
         });
+
 
         //to scroll the list view to bottom on data change
         userListAdapter.registerDataSetObserver(new DataSetObserver() {
@@ -73,6 +66,24 @@ public class UserListActivity extends AppCompatActivity {
             }
         });
 
+        getUserList();
+    }
+
+    private void getUserList() {
+        // list clear
+        userListAdapter.clear();
+        userListAdapter = new UserListAdapter(getApplicationContext(), R.layout.userprofile);
+        listView.setAdapter(userListAdapter);
+
+        TCPThread tcpThread = new TCPThread(this);
+
+        tcpThread.setID(id);
+        tcpThread.setPassword(pwd);
+        tcpThread.start();
+        try {
+            tcpThread.join();
+        } catch (Exception e) {}
+        tcpThread.Destroy();
     }
 
     private boolean updateStatus() {

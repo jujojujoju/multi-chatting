@@ -122,7 +122,6 @@ public class TCPThread extends Thread {
                     break;
                 } else if (this.activity.getClass().getName().equals(UserListActivity.class.getName())) {
                     getUserList();
-//                    userUpdate();
                     break;
                 }
             } catch (Exception e) {

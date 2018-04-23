@@ -29,7 +29,13 @@ void User::run() {
             if (recv(client_socket, (char *) &size, sizeof(size), 0) <= 0) {
                 throw exception();
             }
+
+#ifdef __linux__
+            size = be64toh(size);
+#else
             size = htonll(size);
+#endif
+
             cout << "recieve size : " << size << endl;
 
             int rbyte = 0;
@@ -67,16 +73,16 @@ int User::processMessage(string msg) {
             case TYPE::CHAT:
                 chat(root);
                 break;
-            case TYPE ::GET_MESSAGE:
+            case TYPE::GET_MESSAGE:
                 getMessages(root);
                 break;
-            case TYPE ::GET_PERSONAL_MESSAGE:
+            case TYPE::GET_PERSONAL_MESSAGE:
                 getPersonalMessages(root);
                 break;
-            case TYPE ::GET_USERLIST:
+            case TYPE::GET_USERLIST:
                 getUserList(root);
                 break;
-            case TYPE ::PERSONAL_CHAT:
+            case TYPE::PERSONAL_CHAT:
                 personalChat(root);
                 break;
             default:
@@ -216,7 +222,7 @@ void User::chat(Json::Value value) {
 }
 
 void User::leaveUser(int type) {
-    if(type == GET_USERLIST)
+    if (type == GET_USERLIST)
         database.logout(getID());
 
     UserManager::mutexLock();
@@ -247,7 +253,13 @@ void User::sendMessage2Target(Json::Value value) {
     string msg = writer.write(value);
 
     uint64_t size = msg.size() + 1;
+
+#ifdef __linux__
+    uint64_t s = be64toh(size);
+#else
     uint64_t s = htonll(size);
+#endif
+
 
     cout << "send : " << size << endl;
 
@@ -264,14 +276,18 @@ void User::sendMessage2Target(Json::Value value) {
     UserManager::mutexUnLock();
 
 }
+
 void User::sendMessage(Json::Value value) {
     Json::StyledWriter writer;
     string msg = writer.write(value);
     cout << msg << endl;
 
     uint64_t size = msg.size() + 1;
+#ifdef __linux__
+    uint64_t s = be64toh(size);
+#else
     uint64_t s = htonll(size);
-
+#endif
     cout << "send : " << size << endl;
 
     UserManager::mutexLock();

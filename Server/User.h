@@ -8,10 +8,19 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <pthread.h>
-#include <util.h>
+//#include <util.h>
 #include <string>
 
+#ifdef __linux__
+#include <endian.h>
+#endif
+
+#ifdef __linux__
+#include <jsoncpp/json/json.h>
+#endif
 #include "json/json.h"
+
+
 #include "CThread.h"
 #include "Database.h"
 
